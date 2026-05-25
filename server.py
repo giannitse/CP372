@@ -4,21 +4,18 @@ import socket
 import os
 
 PORT = 3000 # port the server runs on
-
+BUFFER_SIZE = 4096
 USERS_FILE = "users.txt" # file containing valid usernames
-
 FILES_DIR = "received_files" # folder to save files sent by client
 
 if not os.path.exists(FILES_DIR): # check if the folder exists
 
     os.makedirs(FILES_DIR) # create it if it doesn't
 
+
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # create TCP socket
-
 server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) # allow port reuse on restart
-
 server_socket.bind(("", PORT)) # bind to all available network interfaces on our port
-
 server_socket.listen(1) # listen for 1 connection at a time
 
 print(f"Server is running and waiting for a client on port {PORT}...")
@@ -60,6 +57,48 @@ def handle_login(client_socket):
 
 handle_login(client_socket) # run login as soon as a client connects
 
+#--------------------------File Command--------------------------#
+ 
+def handle_file(client_socket, header):
+    # header format: "FILE <filename> <filesize>"
+    # parse the filename and expected byte count from the header
+    try:
+        parts = header.split(" ", 2)          # ["FILE", "<filename>", "<filesize>"]
+        filename = parts[1].strip()
+        filesize = int(parts[2].strip())
+    except (IndexError, ValueError):
+        client_socket.send("ERROR: Invalid FILE header. Expected: FILE <filename> <filesize>".encode())
+        print("Invalid FILE header received")
+        return
+ 
+    # acknowledge the header so the client starts sending raw bytes
+    client_socket.send("OK: Ready to receive file".encode())
+    print(f"Receiving file '{filename}' ({filesize} bytes)...")
+ 
+    # receive the file contents in chunks until we have all expected bytes
+    save_path = os.path.join(FILES_DIR, filename)
+    bytes_received = 0
+    try:
+        with open(save_path, "wb") as f:
+            while bytes_received < filesize:
+                chunk = client_socket.recv(min(BUFFER_SIZE, filesize - bytes_received))
+                if not chunk:
+                    break  # connection dropped mid-transfer
+                f.write(chunk)
+                bytes_received += len(chunk)
+    except Exception as e:
+        client_socket.send(f"ERROR: Could not save file: {e}".encode())
+        print(f"Error saving file: {e}")
+        return
+ 
+    if bytes_received == filesize:
+        client_socket.send(f"OK: File '{filename}' received and saved ({bytes_received} bytes)".encode())
+        print(f"File received successfully: {save_path}")
+    else:
+        # transfer was cut short
+        client_socket.send(f"ERROR: Incomplete transfer. Expected {filesize} bytes, got {bytes_received}".encode())
+        print(f"Incomplete file transfer for '{filename}'")
+
 
 #--------------------------QUIT,Error Handling & MSG Commands--------------------------#
 
@@ -89,6 +128,10 @@ def handle_commands(client_socket):
                 # client wants to disconnect gracefully
                 handle_quit(client_socket)
                 break
+
+            elif data.startswith("FILE"):
+                # hand off to file handler — passes full header line
+                handle_file(client_socket, data)
 
             else:
                 # client sent something we don't recognize

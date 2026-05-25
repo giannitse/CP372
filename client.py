@@ -4,6 +4,7 @@ import socket
 import os
 
 PORT = 3000      # must match server port
+BUFFER_SIZE = 4096
 
 
 def connect_to_server(host, port):
@@ -52,6 +53,44 @@ def send_message(client_socket, message):
 
     response = client_socket.recv(1024).decode()
     print(f"Server: {response}")  # expect "OK: Message received"
+
+
+#--------------------------FILE Command--------------------------#
+ 
+def send_file(client_socket, filepath):
+    # send a file to the server
+    # protocol: "FILE <filename> <filesize>" header, wait for OK, then raw bytes
+ 
+    if not os.path.exists(filepath):
+        print(f"ERROR: File '{filepath}' not found.")
+        return
+ 
+    filename = os.path.basename(filepath)  # strip any leading directory path
+    filesize = os.path.getsize(filepath)
+ 
+    # send the FILE header so the server knows the filename and how many bytes are coming
+    client_socket.send(f"FILE {filename} {filesize}".encode())
+ 
+    # wait for server to acknowledge the header before sending raw bytes
+    ack = client_socket.recv(1024).decode()
+    if not ack.startswith("OK"):
+        print(f"Server: {ack}")
+        return
+ 
+    # stream the file contents in chunks
+    bytes_sent = 0
+    with open(filepath, "rb") as f:
+        while bytes_sent < filesize:
+            chunk = f.read(BUFFER_SIZE)
+            if not chunk:
+                break
+            client_socket.sendall(chunk)
+            bytes_sent += len(chunk)
+ 
+    # wait for the server to confirm the file was saved
+    response = client_socket.recv(1024).decode()
+    print(f"Server: {response}")
+    print(f"File '{filename}' sent successfully ({bytes_sent} bytes).")
 
 
 #--------------------------QUIT Command--------------------------#
@@ -110,6 +149,12 @@ def main():
         elif command == "QUIT":
             send_quit(client_socket)
             break
+
+        elif command == "FILE":
+            if len(parts) < 2 or not parts[1].strip():
+                print("Usage: FILE <filepath>")
+            else:
+                send_file(client_socket, parts[1].strip())
 
         else:
             # send unknown command to server so it can respond with its error message
