@@ -85,7 +85,7 @@ def main():
     handle_login(client_socket)
 
     # main command loop
-    print("\nAvailable commands: MSG <text> | FILE <filepath> | QUIT\n")
+    print("\nAvailable commands: MSG <text> | FILE <filepath> | QUIT\n") # file functionality not added yet, please add
     while True:
         try:
             user_input = input("> ").strip()
