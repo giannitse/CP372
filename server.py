@@ -60,12 +60,13 @@ def handle_login(client_socket):
 
 handle_login(client_socket) # run login as soon as a client connects
 
+
 #--------------------------QUIT,Error Handling & MSG Commands--------------------------#
 
 def handle_quit(client_socket):
     # tell the client the connection is closing then close it
     client_socket.send("OK: Goodbye".encode())
-    print("Client disconnected gracefully")
+    print("Client disconnected.")
     client_socket.close()
 
 def handle_commands(client_socket):
