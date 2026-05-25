@@ -40,9 +40,11 @@ def handle_login(client_socket):
     logged_in = False
     while not logged_in:
         data = client_socket.recv(1024).decode()
-        
-        if data.startswith("LOGIN"):
+
+        if data.startswith("LOGIN"): #The login command should be in the format "LOGIN username"
+
             username = data.split(" ", 1)[1].strip() # extract username after "LOGIN "
+
             valid_users = load_users()
 
             if username in valid_users: # check if the username is valid
@@ -57,3 +59,22 @@ def handle_login(client_socket):
             client_socket.send("ERROR: Please login first".encode())
 
 handle_login(client_socket) # run login as soon as a client connects
+
+#--------------------------Message Command--------------------------#
+
+def handle_commands(client_socket):
+    # main loop that keeps listening for commands after login
+    while True:
+        data = client_socket.recv(1024).decode()
+        if not data:
+            # client disconnected unexpectedly
+            print("Client disconnected")
+            break
+
+        if data.startswith("MSG"):
+            # extract the message text after "MSG "
+            message = data.split(" ", 1)[1].strip()
+            print(f"Message received: {message}")
+            client_socket.send("OK: Message received".encode())
+
+handle_commands(client_socket) # start listening for commands after login
