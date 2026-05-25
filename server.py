@@ -60,21 +60,46 @@ def handle_login(client_socket):
 
 handle_login(client_socket) # run login as soon as a client connects
 
-#--------------------------Message Command--------------------------#
+#--------------------------QUIT,Error Handling & MSG Commands--------------------------#
+
+def handle_quit(client_socket):
+    # tell the client the connection is closing then close it
+    client_socket.send("OK: Goodbye".encode())
+    print("Client disconnected gracefully")
+    client_socket.close()
 
 def handle_commands(client_socket):
     # main loop that keeps listening for commands after login
     while True:
-        data = client_socket.recv(1024).decode()
-        if not data:
-            # client disconnected unexpectedly
-            print("Client disconnected")
+        try:
+            data = client_socket.recv(1024).decode()
+            if not data:
+                # client disconnected unexpectedly
+                print("Client disconnected")
+                break
+
+            if data.startswith("MSG"):
+                # extract the message text after "MSG "
+                message = data.split(" ", 1)[1].strip()
+                print(f"Message received: {message}")
+                client_socket.send("OK: Message received".encode())
+
+            elif data.startswith("QUIT"):
+                # client wants to disconnect gracefully
+                handle_quit(client_socket)
+                break
+
+            else:
+                # client sent something we don't recognize
+                client_socket.send("ERROR: Unknown command".encode())
+                print(f"Unknown command received: {data}")
+
+        except Exception as e:
+            # something went wrong, close the connection
+            print(f"Error: {e}")
+            client_socket.close()
             break
 
-        if data.startswith("MSG"):
-            # extract the message text after "MSG "
-            message = data.split(" ", 1)[1].strip()
-            print(f"Message received: {message}")
-            client_socket.send("OK: Message received".encode())
-
 handle_commands(client_socket) # start listening for commands after login
+
+
