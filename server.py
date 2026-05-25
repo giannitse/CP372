@@ -1,7 +1,9 @@
+#-------------------Setup and Configuration-------------------#
+
 import socket
 import os
 
-PORT = 5000 # port the server runs on
+PORT = 3000 # port the server runs on
 
 USERS_FILE = "users.txt" # file containing valid usernames
 
@@ -25,3 +27,33 @@ client_socket, client_address = server_socket.accept() # wait until a client con
 
 print(f"Client connected from {client_address[0]}:{client_address[1]}") #Success message 
 
+
+#-------------------------Login Command-------------------------#
+
+def load_users(): 
+    # read users.txt and return a list of valid usernames
+    with open(USERS_FILE, "r") as f:
+        return [line.strip() for line in f.readlines()]
+
+def handle_login(client_socket):
+    # keep prompting until the client logs in successfully
+    logged_in = False
+    while not logged_in:
+        data = client_socket.recv(1024).decode()
+        
+        if data.startswith("LOGIN"):
+            username = data.split(" ", 1)[1].strip() # extract username after "LOGIN "
+            valid_users = load_users()
+
+            if username in valid_users: # check if the username is valid
+                client_socket.send("OK".encode())
+                print(f"{username} logged in successfully")
+                logged_in = True
+            else:
+                client_socket.send("ERROR: Invalid user".encode())
+                print(f"Failed login attempt: {username}")
+        else:
+            # client tried to do something before logging in
+            client_socket.send("ERROR: Please login first".encode())
+
+handle_login(client_socket) # run login as soon as a client connects
