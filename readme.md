@@ -242,11 +242,10 @@ Group Members:
 ## Version History
 
 - 1.0
-    - Reviewed and packaged for submission into a singel ZIP archive
+    - Reviewed and packaged for submission into a single ZIP archive
 - 0.4
     - Found a bug where the server terminated when the client dissconected
         - Fixed the bug
-    - 
 - 0.3
     - File sharing functionality added
         - Added command FILE to server.py
