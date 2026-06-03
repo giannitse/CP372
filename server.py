@@ -11,18 +11,24 @@ FILES_DIR = "received_files" # folder to save files sent by client
 if not os.path.exists(FILES_DIR): # check if the folder exists
 
     os.makedirs(FILES_DIR) # create it if it doesn't
-
+    
 
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # create TCP socket
 server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) # allow port reuse on restart
-server_socket.bind(("", PORT)) # bind to all available network interfaces on our port
-server_socket.listen(1) # listen for 1 connection at a time
+server_socket.bind(("", PORT)) # bind to all available network interfaces on our port  
+  
+# Function to return server to default waiting state (No clients)
+def server_listen():
+    
+    server_socket.listen(1) # listen for 1 connection at a time
 
-print(f"Server is running and waiting for a client on port {PORT}...")
+    print(f"Server is running and waiting for a client on port {PORT}...")
 
-client_socket, client_address = server_socket.accept() # wait until a client connects
+    cli_socket, cli_address = server_socket.accept() # wait until a client connects
 
-print(f"Client connected from {client_address[0]}:{client_address[1]}") #Success message 
+    print(f"Client connected from {cli_address[0]}:{cli_address[1]}") #Success message 
+    
+    return cli_socket, cli_address
 
 
 #-------------------------Login Command-------------------------#
@@ -55,7 +61,7 @@ def handle_login(client_socket):
             # client tried to do something before logging in
             client_socket.send("ERROR: Please login first".encode())
 
-handle_login(client_socket) # run login as soon as a client connects
+
 
 #--------------------------File Command--------------------------#
  
@@ -143,7 +149,18 @@ def handle_commands(client_socket):
             print(f"Error: {e}")
             client_socket.close()
             break
+        
+def main():
+    
+    while True:
+        
+        client_socket, client_address = server_listen()
 
-handle_commands(client_socket) # start listening for commands after login
+        handle_login(client_socket) # run login as soon as a client connects
+
+        handle_commands(client_socket) # start listening for commands after login
+
+main()
+        
 
 
