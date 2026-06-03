@@ -241,16 +241,35 @@ Group Members:
 
 ## Version History
 
+- 1.0
+    - Reviewed and packaged for submission into a singel ZIP archive
 - 0.4
-    - File sharing functionality added to Client.py
-- 0.3
-    - File sharing functionality added to Client.py
-- 0.2
-    - user.py created
+    - Found a bug where the server terminated when the client dissconected
+        - Fixed the bug
     - 
+- 0.3
+    - File sharing functionality added
+        - Added command FILE to server.py
+        - Added handle_file() to server.py
+        - Added send_file() to client.py
+    - Found and fixed some bugs with communication
+- 0.2
+    - client.py created
+    - In client.py:
+        - Added connect_to_server()
+        - Added handle_login()
+        - Added send_message()
+        - Added send_quit()
+    - Tested connection to server.py
 - 0.1
     - server.py created
     - users.txt created
+    - In server.py:
+        - Added load_users()
+        - Added handle_login()
+        - Added handle_quit()
+        - Added handle_commands()
+            -  Added commands: MSG, QUIT
     - Used Netcat to test command functionality
 
 ## Academic Integrity
